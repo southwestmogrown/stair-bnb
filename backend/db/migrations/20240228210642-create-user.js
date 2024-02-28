@@ -18,6 +18,12 @@ module.exports = {
           primaryKey: true,
           type: Sequelize.INTEGER,
         },
+        firstName: {
+          type: Sequelize.String(30),
+        },
+        lastName: {
+          type: Sequelize.String(100),
+        },
         username: {
           type: Sequelize.STRING(30),
           allowNull: false,
