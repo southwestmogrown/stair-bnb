@@ -19,10 +19,10 @@ module.exports = {
           type: Sequelize.INTEGER,
         },
         firstName: {
-          type: Sequelize.String(30),
+          type: Sequelize.STRING(30),
         },
         lastName: {
-          type: Sequelize.String(100),
+          type: Sequelize.STRING(100),
         },
         username: {
           type: Sequelize.STRING(30),
