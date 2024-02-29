@@ -26,30 +26,47 @@ const validateSignup = [
   handleValidationErrors,
 ];
 
-router.post("/", validateSignup, async (req, res) => {
+router.post("/", validateSignup, async (req, res, next) => {
   const { email, password, username, firstName, lastName } = req.body;
   const hashedPassword = bcrypt.hashSync(password);
-  const user = await User.create({
-    email,
-    username,
-    hashedPassword,
-    firstName,
-    lastName,
-  });
 
-  const safeUser = {
-    id: user.id,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    email: user.email,
-    username: user.username,
-  };
+  try {
+    const user = await User.create({
+      email,
+      username,
+      hashedPassword,
+      firstName,
+      lastName,
+    });
 
-  await setTokenCookie(res, safeUser);
+    const safeUser = {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      username: user.username,
+    };
 
-  return res.json({
-    user: safeUser,
-  });
+    await setTokenCookie(res, safeUser);
+
+    return res.json({
+      user: safeUser,
+    });
+  } catch (e) {
+    const err = new Error("User already exists");
+    err.status = 500;
+    err.stack = null;
+    err.title = "Signup Failed";
+    if (e.errors[0].message === "email must be unique") {
+      err.errors = { email: "User with that email already exists" };
+      next(err);
+    } else if (e.errors[0].message === "username must be unique") {
+      err.errors = { username: "User with that username already exists" };
+      next(err);
+    } else {
+      next(e);
+    }
+  }
 });
 
 module.exports = router;

@@ -1,7 +1,7 @@
 const express = require("express");
 
 const { Spot, SpotImage, User } = require("../../db/models");
-
+const { requireAuth } = require("../../utils/auth");
 const { check } = require("express-validator");
 const { handleValidationErrors } = require("../../utils/validation");
 
@@ -15,7 +15,7 @@ router.get("/", async (req, res) => {
   });
 });
 
-router.get("/current", async (req, res) => {
+router.get("/current", requireAuth, async (req, res) => {
   const user = req.user;
   const userSpots = await Spot.findAll({
     where: {
@@ -90,7 +90,7 @@ const validateSpot = [
   handleValidationErrors,
 ];
 
-router.post("/", validateSpot, async (req, res) => {
+router.post("/", validateSpot, requireAuth, async (req, res) => {
   const { address, city, state, country, lat, lng, name, description, price } =
     req.body;
 
@@ -108,6 +108,87 @@ router.post("/", validateSpot, async (req, res) => {
   });
   res.status(201);
   res.json(newSpot);
+});
+
+router.post("/:spotId/images", requireAuth, async (req, res, next) => {
+  const { url, preview } = req.body;
+
+  const spot = await Spot.findByPk(req.params.spotId);
+
+  if (!spot) {
+    const err = new Error("Resource not found");
+    err.status = 404;
+    err.title = "Resource not found";
+    return next(err);
+  }
+
+  if (spot.ownerId !== req.user.id) {
+    const err = new Error("You must own a spot to add an image");
+    err.status = 403;
+    err.title = "Image Creation Failed";
+    err.errors = {
+      authorization: "You are not authorized for this action",
+    };
+    return next(err);
+  }
+
+  const newImage = await SpotImage.create({
+    spotId: spot.id,
+    url,
+    preview,
+  });
+
+  res.json({
+    id: newImage.id,
+    url: newImage.url,
+    preview: newImage.preview,
+  });
+});
+
+router.put("/:spotId", requireAuth, async (req, res, next) => {
+  const { address, city, state, country, lat, lng, name, description, price } =
+    req.body;
+  const spotToUpdate = await Spot.findByPk(req.params.spotId);
+
+  if (!spotToUpdate) {
+    const err = new Error("Spot couldn't be found");
+    err.status = 404;
+    err.stack = null;
+    return res.json({
+      message: err.message,
+    });
+  }
+
+  if (address !== undefined) spotToUpdate.address = address;
+  if (city !== undefined) spotToUpdate.city = city;
+  if (state !== undefined) spotToUpdate.state = state;
+  if (country !== undefined) spotToUpdate.country = country;
+  if (lat !== undefined) spotToUpdate.lat = lat;
+  if (lng !== undefined) spotToUpdate.lng = lng;
+  if (name !== undefined) spotToUpdate.name = name;
+  if (description !== undefined) spotToUpdate.description = description;
+  if (price !== undefined) spotToUpdate.price = price;
+
+  await spotToUpdate.save();
+
+  res.json(spotToUpdate);
+});
+
+router.delete("/:spotId", requireAuth, async (req, res, next) => {
+  const spotToDelete = await Spot.findByPk(req.params.spotId);
+
+  if (!spotToDelete) {
+    const err = new Error("Spot couldn't be found");
+    err.status = 404;
+    err.stack = null;
+    return res.json({
+      message: err.message,
+    });
+  }
+
+  await spotToDelete.destroy();
+
+  res.json({ message: "Successfully deleted" });
 });
 
 module.exports = router;
