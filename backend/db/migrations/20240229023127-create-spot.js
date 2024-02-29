@@ -41,11 +41,11 @@ module.exports = {
         },
         lat: {
           allowNull: false,
-          type: Sequelize.DECIMAL(3, 5),
+          type: Sequelize.DECIMAL(8, 6),
         },
         lng: {
           allowNull: false,
-          type: Sequelize.DECIMAL(3, 5),
+          type: Sequelize.DECIMAL(9, 6),
         },
         name: {
           allowNull: false,
