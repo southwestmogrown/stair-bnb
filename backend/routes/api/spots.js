@@ -64,14 +64,14 @@ const validateSpot = [
     .withMessage("Country is required"),
   check("lat")
     .exists({ checkFalsy: true })
-    .isDecimal({
+    .isFloat({
       max: 90,
       min: -90,
     })
     .withMessage("Latitude must be within -90 and 90"),
   check("state")
     .exists({ checkFalsy: true })
-    .isDecimal({
+    .isFloat({
       max: 180,
       min: -180,
     })
@@ -85,7 +85,7 @@ const validateSpot = [
     .withMessage("Description is required"),
   check("price")
     .exists({ checkFalsy: true })
-    .isDecimal({ min: 0 })
+    .isFloat({ min: 0 })
     .withMessage("Price per day must be a positive number"),
   handleValidationErrors,
 ];
