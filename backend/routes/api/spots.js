@@ -69,7 +69,7 @@ const validateSpot = [
       min: -90,
     })
     .withMessage("Latitude must be within -90 and 90"),
-  check("state")
+  check("lng")
     .exists({ checkFalsy: true })
     .isFloat({
       max: 180,
