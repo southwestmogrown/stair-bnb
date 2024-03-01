@@ -15,6 +15,51 @@ module.exports = {
         {
           spotId: 1,
           url: "www.google.com",
+          preview: true,
+        },
+        {
+          spotId: 1,
+          url: "www.google.com/1",
+          preview: false,
+        },
+        {
+          spotId: 1,
+          url: "www.google.com/2",
+          preview: false,
+        },
+        {
+          spotId: 1,
+          url: "www.google.com/3",
+          preview: false,
+        },
+        {
+          spotId: 2,
+          url: "www.google.com",
+          preview: true,
+        },
+        {
+          spotId: 2,
+          url: "www.google.com/1",
+          preview: false,
+        },
+        {
+          spotId: 2,
+          url: "www.google.com/2",
+          preview: false,
+        },
+        {
+          spotId: 2,
+          url: "www.google.com/3",
+          preview: false,
+        },
+        {
+          spotId: 2,
+          url: "www.google.com/4",
+          preview: false,
+        },
+        {
+          spotId: 2,
+          url: "www.google.com/5",
           preview: false,
         },
         {
@@ -23,13 +68,53 @@ module.exports = {
           preview: false,
         },
         {
+          spotId: 2,
+          url: "www.google.com/6",
+          preview: false,
+        },
+        {
+          spotId: 2,
+          url: "www.google.com/7",
+          preview: false,
+        },
+        {
+          spotId: 2,
+          url: "www.google.com/8",
+          preview: false,
+        },
+        {
+          spotId: 2,
+          url: "www.google.com/9",
+          preview: false,
+        },
+        {
           spotId: 3,
           url: "www.google.com",
+          preview: true,
+        },
+        {
+          spotId: 3,
+          url: "www.google.com/1",
+          preview: false,
+        },
+        {
+          spotId: 3,
+          url: "www.google.com/2",
+          preview: false,
+        },
+        {
+          spotId: 3,
+          url: "www.google.com/3",
           preview: false,
         },
         {
           spotId: 4,
           url: "www.google.com",
+          preview: true,
+        },
+        {
+          spotId: 4,
+          url: "www.google.com/1",
           preview: false,
         },
       ],
