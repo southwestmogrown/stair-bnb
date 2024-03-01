@@ -17,6 +17,7 @@ router.get("/", async (req, res) => {
 
 router.get("/current", requireAuth, async (req, res) => {
   const user = req.user;
+  console.log(user);
   const userSpots = await Spot.findAll({
     where: {
       ownerId: user.id,
@@ -25,6 +26,7 @@ router.get("/current", requireAuth, async (req, res) => {
   res.json({
     Spots: userSpots,
   });
+  console.log(userSpots);
 });
 
 router.get("/:spotId", async (req, res, next) => {
