@@ -101,7 +101,7 @@ const validateSpot = [
   handleValidationErrors,
 ];
 
-router.post("/", validateSpot, requireAuth, async (req, res) => {
+router.post("/", requireAuth, validateSpot, async (req, res) => {
   const { address, city, state, country, lat, lng, name, description, price } =
     req.body;
 
