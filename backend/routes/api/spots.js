@@ -197,6 +197,16 @@ router.delete("/:spotId", requireAuth, async (req, res, next) => {
     spotError(next);
   }
 
+  if (spotToDelete.ownerId !== req.user.id) {
+    const err = new Error("You must own a spot to delete it");
+    err.status = 403;
+    err.title = "Spot Delete Failed";
+    err.errors = {
+      authorization: "You are not authorized for this action",
+    };
+    return next(err);
+  }
+
   await spotToDelete.destroy();
 
   res.json({ message: "Successfully deleted" });

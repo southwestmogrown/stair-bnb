@@ -9,9 +9,12 @@ router.delete("/:imageId", requireAuth, async (req, res, next) => {
   const imageToDelete = await SpotImage.findByPk(req.params.imageId);
 
   if (imageToDelete.userId !== req.user.id) {
-    const err = new Error("This image is not yours");
+    const err = new Error("You must own a spot to delete it's images");
     err.status = 403;
-    err.stack = null;
+    err.title = "Spot Image Delete Failed";
+    err.errors = {
+      authorization: "You are not authorized for this action",
+    };
     return next(err);
   }
 
