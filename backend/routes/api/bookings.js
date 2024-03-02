@@ -2,6 +2,14 @@ const express = require("express");
 const { requireAuth } = require("../../utils/auth");
 
 const { Booking, Spot } = require("../../db/models");
+const {
+  spotError,
+  bookingDateValidator,
+  validateBookingUpdate,
+  validateSpotBooking,
+  validateBookingDates,
+  bookingError,
+} = require("../../utils/validation");
 
 const router = express.Router();
 
@@ -19,10 +27,7 @@ router.get("/current", requireAuth, async (req, res) => {
   });
 
   if (!currentBookings.length) {
-    const err = new Error("Spot couldn't be found");
-    err.status = 404;
-    err.stack = null;
-    return next(err);
+    spotError(next);
   }
 
   const bookingList = [];
@@ -32,6 +37,60 @@ router.get("/current", requireAuth, async (req, res) => {
   });
 
   bookingList.forEach((booking) => {});
+});
+
+router.put("/:bookingId", requireAuth, async (req, res, next) => {
+  const bookingToChange = await Booking.findByPk(req.params.bookingId);
+  const { startDate, endDate } = req.body;
+
+  if (!bookingToChange) {
+    bookingError(next);
+  }
+
+  const bookingErr = bookingDateValidator(startDate, endDate);
+  console.log(bookingErr);
+
+  if (bookingErr) return next(bookingErr);
+
+  const updateError = validateBookingUpdate(bookingToChange);
+
+  if (updateError) return next(updateError);
+
+  const bookingDateError = validateBookingDates(
+    bookingToChange,
+    startDate,
+    endDate
+  );
+  if (bookingDateError) return next(bookingDateError);
+
+  if (startDate !== undefined) bookingToChange.startDate = startDate;
+  if (endDate !== undefined) bookingToChange.endDate = endDate;
+
+  await bookingToChange.save();
+
+  res.json(bookingToChange);
+});
+
+router.delete("/:bookingId", requireAuth, async (req, res, next) => {
+  const bookingToDelete = await Booking.findByPk(req.params.bookingId);
+
+  if (!bookingToDelete) {
+    bookingError(next);
+  }
+
+  const today = Date.now();
+  const sDate = new Date(bookingToDelete.startDate);
+
+  if (today >= sDate.getTime()) {
+    const err = new Error("Bookings that have been started can't be deleted");
+    err.status = 403;
+    err.stack = null;
+    return next(err);
+  }
+
+  await bookingToDelete.destroy();
+
+  res.json({ message: "Successfully deleted" });
 });
 
 module.exports = router;
