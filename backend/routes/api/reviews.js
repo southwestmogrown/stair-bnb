@@ -116,8 +116,8 @@ const validateUpdateReview = [
 
 router.put(
   "/:reviewId",
-  validateUpdateReview,
   requireAuth,
+  validateUpdateReview,
   async (req, res, next) => {
     const reviewToUpdate = await Review.findByPk(req.params.reviewId);
     const { review, stars } = req.body;
