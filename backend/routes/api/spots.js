@@ -6,10 +6,16 @@ const {
   User,
   Review,
   ReviewImage,
+  Booking,
 } = require("../../db/models");
 const { requireAuth } = require("../../utils/auth");
 const { check } = require("express-validator");
-const { handleValidationErrors } = require("../../utils/validation");
+const {
+  handleValidationErrors,
+  bookingDateValidator,
+  validateSpotBooking,
+  spotError,
+} = require("../../utils/validation");
 
 const router = express.Router();
 
@@ -39,9 +45,7 @@ router.get("/:spotId", async (req, res, next) => {
   const spot = await Spot.findByPk(req.params.spotId);
 
   if (!spot) {
-    const err = new Error("Spot couldn't be found");
-    err.status = 404;
-    return next(err);
+    spotError(next);
   }
 
   const spotImages = await SpotImage.findAll({
@@ -159,12 +163,7 @@ router.put("/:spotId", requireAuth, async (req, res, next) => {
   const spotToUpdate = await Spot.findByPk(req.params.spotId);
 
   if (!spotToUpdate) {
-    const err = new Error("Spot couldn't be found");
-    err.status = 404;
-    err.stack = null;
-    return res.json({
-      message: err.message,
-    });
+    spotError(next);
   }
 
   if (address !== undefined) spotToUpdate.address = address;
@@ -186,10 +185,7 @@ router.delete("/:spotId", requireAuth, async (req, res, next) => {
   const spotToDelete = await Spot.findByPk(req.params.spotId);
 
   if (!spotToDelete) {
-    const err = new Error("Spot couldn't be found");
-    err.status = 404;
-    err.stack = null;
-    return next(err);
+    spotError(next);
   }
 
   await spotToDelete.destroy();
@@ -215,10 +211,7 @@ router.get("/:spotId/reviews", async (req, res, next) => {
   });
 
   if (!spotReviews.length) {
-    const err = new Error("Spot couldn't be found");
-    err.status = 404;
-    err.stack = null;
-    return next(err);
+    spotError(next);
   }
 
   const spotReviewList = [];
@@ -259,10 +252,7 @@ router.post(
     });
 
     if (!spot) {
-      const err = new Error("Spot couldn't be found");
-      err.status = 404;
-      err.stack = null;
-      return next(err);
+      spotError(next);
     }
 
     for (let review of spot.Reviews) {
@@ -292,5 +282,71 @@ router.post(
     res.json(newReview);
   }
 );
+
+router.get("/:spotId/bookings", requireAuth, async (req, res, next) => {
+  const spot = await Spot.findByPk(req.params.spotId, {
+    include: {
+      model: Booking,
+      include: {
+        model: User,
+        attributes: ["id", "firstName", "lastName"],
+      },
+    },
+  });
+
+  if (!spot) {
+    spotError(next);
+  }
+
+  const safeSpot = spot.toJSON();
+  console.log(safeSpot);
+  if (safeSpot.ownerId !== req.user.id) {
+    const cleanBookings = [];
+
+    safeSpot.Bookings.forEach((booking) => {
+      cleanBookings.push({
+        spotId: booking.spotId,
+        startDate: booking.startDate,
+        endDate: booking.endDate,
+      });
+    });
+    res.json({ Bookings: cleanBookings });
+  } else {
+    const cleanOwnerBookings = [];
+
+    safeSpot.Bookings.forEach((booking) => {
+      cleanOwnerBookings.push(booking);
+    });
+
+    res.json({ Bookings: cleanOwnerBookings });
+  }
+});
+
+router.post("/:spotId/bookings", requireAuth, async (req, res, next) => {
+  const { startDate, endDate } = req.body;
+
+  const bookingError = bookingDateValidator(startDate, endDate);
+
+  if (bookingError) return next(bookingError);
+
+  const spot = await Spot.findByPk(req.params.spotId, {
+    include: {
+      model: Booking,
+    },
+  });
+
+  const spotBookingError = validateSpotBooking(spot, startDate, endDate, next);
+
+  if (spotBookingError) return next(spotBookingError);
+
+  const newBooking = await Booking.create({
+    spotId: spot.id,
+    userId: req.user.id,
+    startDate,
+    endDate,
+  });
+
+  res.json(newBooking);
+});
 
 module.exports = router;
