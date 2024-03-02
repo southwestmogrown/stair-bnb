@@ -38,7 +38,6 @@ router.get("/current", requireAuth, async (req, res) => {
   res.json({
     Spots: userSpots,
   });
-  console.log(userSpots);
 });
 
 router.get("/:spotId", async (req, res, next) => {
@@ -299,7 +298,6 @@ router.get("/:spotId/bookings", requireAuth, async (req, res, next) => {
   }
 
   const safeSpot = spot.toJSON();
-  console.log(safeSpot);
   if (safeSpot.ownerId !== req.user.id) {
     const cleanBookings = [];
 
