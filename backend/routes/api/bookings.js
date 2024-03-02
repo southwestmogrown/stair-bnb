@@ -6,9 +6,8 @@ const {
   spotError,
   bookingDateValidator,
   validateBookingUpdate,
-  validateSpotBooking,
-  validateBookingDates,
   bookingError,
+  validateOtherBookings,
 } = require("../../utils/validation");
 
 const router = express.Router();
@@ -66,14 +65,27 @@ router.get("/current", requireAuth, async (req, res) => {
 
 router.put("/:bookingId", requireAuth, async (req, res, next) => {
   const bookingToChange = await Booking.findByPk(req.params.bookingId);
-  const { startDate, endDate } = req.body;
-
   if (!bookingToChange) {
     bookingError(next);
   }
+  const allBookings = await Booking.findAll({
+    where: {
+      spotId: bookingToChange.spotId,
+    },
+  });
+  const bookingsList = [];
+
+  allBookings.forEach((booking) => bookingsList.push(booking.toJSON()));
+
+  const { startDate, endDate } = req.body;
+
+  if (bookingToChange.userId !== req.user.id) {
+    const err = new Error("This booking is not yours");
+    err.status = 403;
+    return next(err);
+  }
 
   const bookingErr = bookingDateValidator(startDate, endDate);
-  console.log(bookingErr);
 
   if (bookingErr) return next(bookingErr);
 
@@ -81,12 +93,14 @@ router.put("/:bookingId", requireAuth, async (req, res, next) => {
 
   if (updateError) return next(updateError);
 
-  const bookingDateError = validateBookingDates(
-    bookingToChange,
-    startDate,
-    endDate
-  );
-  if (bookingDateError) return next(bookingDateError);
+  for (let booking of bookingsList) {
+    if (booking.id == req.params.bookingId) {
+      continue;
+    } else {
+      const err = validateOtherBookings(booking, startDate, endDate);
+      if (err) return next(err);
+    }
+  }
 
   if (startDate !== undefined) bookingToChange.startDate = startDate;
   if (endDate !== undefined) bookingToChange.endDate = endDate;
@@ -101,6 +115,16 @@ router.delete("/:bookingId", requireAuth, async (req, res, next) => {
 
   if (!bookingToDelete) {
     bookingError(next);
+  }
+
+  if (bookingToDelete.userId !== req.user.id) {
+    const err = new Error("You must own a booking to delete it");
+    err.status = 403;
+    err.title = "Booking Delete Failed";
+    err.errors = {
+      authorization: "You are not authorized for this action",
+    };
+    return next(err);
   }
 
   const today = Date.now();

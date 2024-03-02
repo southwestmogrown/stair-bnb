@@ -16,12 +16,17 @@ const {
   validateSpotBooking,
   spotError,
 } = require("../../utils/validation");
+const user = require("../../db/models/user");
 
 const router = express.Router();
 
 router.get("/", async (req, res) => {
-  const spots = await Spot.findAll();
+  const spots = await Spot.findAll({
+    limit: parseInt(req.query.page),
+    offset: parseInt(req.query.size),
+  });
 
+  console.log(req.query);
   res.json({
     Spots: spots,
   });
@@ -29,7 +34,6 @@ router.get("/", async (req, res) => {
 
 router.get("/current", requireAuth, async (req, res) => {
   const user = req.user;
-  console.log(user);
   const userSpots = await Spot.findAll({
     where: {
       ownerId: user.id,
@@ -161,6 +165,10 @@ router.put("/:spotId", requireAuth, async (req, res, next) => {
     req.body;
   const spotToUpdate = await Spot.findByPk(req.params.spotId);
 
+  if (!spotToUpdate) {
+    spotError(next);
+  }
+
   if (spotToUpdate.ownerId !== req.user.id) {
     const err = new Error("You must own a spot to update it");
     err.status = 403;
@@ -169,10 +177,6 @@ router.put("/:spotId", requireAuth, async (req, res, next) => {
       authorization: "You are not authorized for this action",
     };
     return next(err);
-  }
-
-  if (!spotToUpdate) {
-    spotError(next);
   }
 
   if (address !== undefined) spotToUpdate.address = address;
@@ -352,6 +356,20 @@ router.post("/:spotId/bookings", requireAuth, async (req, res, next) => {
       model: Booking,
     },
   });
+
+  if (!spot) {
+    spotError(next);
+  }
+
+  if (spot.ownerId === req.user.id) {
+    const err = new Error("You cannot book a spot you own");
+    err.status = 403;
+    err.title = "Booking Creation Failed";
+    err.errors = {
+      authorization: "You are not authorized for this action",
+    };
+    return next(err);
+  }
 
   const spotBookingError = validateSpotBooking(spot, startDate, endDate, next);
 
