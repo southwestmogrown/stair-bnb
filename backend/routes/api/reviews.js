@@ -74,19 +74,19 @@ router.post("/:reviewId/images", requireAuth, async (req, res, next) => {
     err.status = 404;
     err.title = "Review doesn't exist";
     err.stack = null;
-    next(err);
+    return next(err);
   }
 
   const safeReview = review.toJSON();
 
-  if (safeReview.Spot.SpotImages >= 10) {
+  if (safeReview.Spot.SpotImages.length > 10) {
     const err = new Error(
       "Maximum number of images for this resource was reached"
     );
     err.status = 403;
     err.title = "SpotImage Overflow";
     err.stack = null;
-    next(err);
+    return next(err);
   }
 
   const { url, preview } = req.body;
@@ -130,6 +130,12 @@ router.put(
       next(err);
     }
 
+    if (reviewToUpdate.userId !== req.user.id) {
+      const err = new Error("This review is not yours");
+      err.status = 403;
+      return next(err);
+    }
+
     if (review !== undefined) reviewToUpdate.review = review;
     if (stars !== undefined) reviewToUpdate.stars = stars;
 
@@ -153,6 +159,12 @@ router.delete("/:reviewId", requireAuth, async (req, res, next) => {
     err.title = "Review doesn't exist";
     err.stack = null;
     next(err);
+  }
+
+  if (reviewToDelete.userId !== req.user.id) {
+    const err = new Error("This review is not yours");
+    err.status = 403;
+    return next(err);
   }
 
   await reviewToDelete.destroy();

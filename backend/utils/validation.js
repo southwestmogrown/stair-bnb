@@ -55,19 +55,56 @@ const validateSpotBooking = (spot, startDate, endDate, next) => {
     err.errors = {};
     err.message = "Sorry, this spot is already booked for the specified dates";
 
-    if (booking.startDate === startDate) {
+    const bookingStartDate = new Date(booking.startDate);
+    const inputStartDate = new Date(startDate);
+    const bookingEndDate = new Date(booking.endDate);
+    const inputEndDate = new Date(endDate);
+    if (bookingStartDate.getTime() === inputStartDate.getTime()) {
       err.errors.startDate = "Start date conflicts with an existing booking";
       return err;
     }
 
-    if (booking.endDate === endDate) {
+    if (inputStartDate.getTime() === bookingEndDate.getTime()) {
+      err.errors.startDate = "Start date conflicts with an existing booking";
+      return err;
+    }
+
+    if (bookingEndDate.getTime() === inputEndDate.getTime()) {
       err.errors.startDate = "End date conflicts with an existing booking";
+      return err;
+    }
+
+    if (bookingStartDate.getTime() === inputEndDate.getTime()) {
+      console.log("here");
+      err.errors.startDate = "End date conflicts with an existing booking";
+      return err;
+    }
+
+    if (
+      inputStartDate.getTime() > bookingStartDate &&
+      inputStartDate < bookingEndDate
+    ) {
+      err.errors.startDate = "Start date conflicts with an existing booking";
+      return err;
+    }
+
+    if (
+      inputEndDate.getTime() > bookingStartDate &&
+      inputEndDate < bookingEndDate
+    ) {
+      err.errors.startDate = "End date conflicts with an existing booking";
+      return err;
+    }
+
+    if (inputStartDate < bookingStartDate && inputEndDate > bookingEndDate) {
+      err.errors.startDate =
+        "Start and end dates conflicts with an existing booking";
       return err;
     }
   }
 };
 
-const validateBookingDates = (booking, startDate, endDate, next) => {
+const validateOtherBookings = (booking, startDate, endDate) => {
   const err = new Error();
   err.status = 403;
   err.errors = {};
@@ -82,9 +119,33 @@ const validateBookingDates = (booking, startDate, endDate, next) => {
     err.errors.startDate = "Start date conflicts with an existing booking";
     return err;
   }
+  if (bookingStartDate.getTime() === eDate.getTime()) {
+    err.errors.startDate = "Start date conflicts with an existing booking";
+    return err;
+  }
 
   if (bookingEndDate.getTime() === eDate.getTime()) {
     err.errors.startDate = "End date conflicts with an existing booking";
+    return err;
+  }
+  if (bookingEndDate.getTime() === sDate.getTime()) {
+    err.errors.startDate = "End date conflicts with an existing booking";
+    return err;
+  }
+
+  if (sDate.getTime() > bookingStartDate && sDate < bookingEndDate) {
+    err.errors.startDate = "Start date conflicts with an existing booking";
+    return err;
+  }
+
+  if (eDate.getTime() > bookingStartDate && eDate < bookingEndDate) {
+    err.errors.startDate = "End date conflicts with an existing booking";
+    return err;
+  }
+
+  if (sDate < bookingStartDate && eDate > bookingEndDate) {
+    err.errors.startDate =
+      "Start and end dates conflicts with an existing booking";
     return err;
   }
 
@@ -100,7 +161,6 @@ const spotError = (next) => {
 
 const validateBookingUpdate = (bookingToChange, next) => {
   const today = Date.now();
-  const bookingEndDate = new Date(bookingToChange.endDate);
 
   if (today >= bookingToChange.endDate) {
     const err = new Error("Past bookings can't be modified");
@@ -124,6 +184,6 @@ module.exports = {
   validateSpotBooking,
   spotError,
   validateBookingUpdate,
-  validateBookingDates,
   bookingError,
+  validateOtherBookings,
 };
