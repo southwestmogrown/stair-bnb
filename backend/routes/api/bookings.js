@@ -1,7 +1,7 @@
 const express = require("express");
 const { requireAuth } = require("../../utils/auth");
 
-const { Booking, Spot } = require("../../db/models");
+const { Booking, Spot, SpotImage } = require("../../db/models");
 const {
   spotError,
   bookingDateValidator,
@@ -21,7 +21,24 @@ router.get("/current", requireAuth, async (req, res) => {
     include: [
       {
         model: Spot,
-        attributes: { exclude: ["createdAt, updatedAt"] },
+        attributes: [
+          "address",
+          "city",
+          "country",
+          "description",
+          "id",
+          "lat",
+          "lng",
+          "name",
+          "price",
+          "state",
+        ],
+        include: [
+          {
+            model: SpotImage,
+            attributes: { exclude: ["createdAt, updatedAt"] },
+          },
+        ],
       },
     ],
   });
@@ -36,7 +53,15 @@ router.get("/current", requireAuth, async (req, res) => {
     bookingList.push(booking.toJSON());
   });
 
-  bookingList.forEach((booking) => {});
+  bookingList.forEach((booking) => {
+    booking.Spot.SpotImages.forEach((image) => {
+      booking.previewImage = image.url;
+    });
+
+    delete booking.Spot.SpotImages;
+  });
+
+  res.json({ Bookings: bookingList });
 });
 
 router.put("/:bookingId", requireAuth, async (req, res, next) => {
