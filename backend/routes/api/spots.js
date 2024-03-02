@@ -161,6 +161,16 @@ router.put("/:spotId", requireAuth, async (req, res, next) => {
     req.body;
   const spotToUpdate = await Spot.findByPk(req.params.spotId);
 
+  if (spotToUpdate.ownerId !== req.user.id) {
+    const err = new Error("You must own a spot to update it");
+    err.status = 403;
+    err.title = "Spot Update Failed";
+    err.errors = {
+      authorization: "You are not authorized for this action",
+    };
+    return next(err);
+  }
+
   if (!spotToUpdate) {
     spotError(next);
   }
